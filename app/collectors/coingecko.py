@@ -1,8 +1,9 @@
 import httpx
 from app.config import COINGECKO_BASE_URL
 from app.models.coin import Coin
+from app.providers.coin_provider import CoinProvider
 
-class CoinGeckoClient:
+class CoinGeckoClient(CoinProvider):
 
     def __init__(self):
         self.base_url = COINGECKO_BASE_URL
