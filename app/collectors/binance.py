@@ -1,28 +1,31 @@
-import httpx
+from app.clients.base_api_client import BaseAPIClient
+from app.config import BINANCE_BASE_URL
 from app.models.coin import Coin
 from app.providers.coin_provider import CoinProvider
-from app.config import Binance_BASE_URL
 
 class BinanceClient(CoinProvider):
-    def __init__(self):
-        self.base_url = Binance_BASE_URL
+
+    def __init__(self, http_client: BaseAPIClient):
+        self.http = http_client
 
     def get_top_coins(self, limit=100):
-        url = f"{self.base_url}/ticker/24hr"
 
-        response = httpx.get(url, timeout=30)
-        response.raise_for_status()
-
-        data = response.json()
+        data = self.http.get("/ticker/24hr")
 
         coins = []
 
-        for ticker in data[:limit]:
+        for ticker in data:
+
+            if not ticker["symbol"].endswith("USDT"):
+                continue
+
+            symbol = ticker["symbol"].replace("USDT", "").lower()
+
             coins.append(
                 Coin(
-                    coin_id=ticker["symbol"],
-                    name=ticker["symbol"],
-                    symbol=ticker["symbol"].replace("USDT", "").lower(),
+                    coin_id=symbol,
+                    name=symbol.upper(),
+                    symbol=symbol,
                     current_price=float(ticker["lastPrice"]),
                     market_cap=None,
                     market_cap_rank=None,
@@ -30,5 +33,8 @@ class BinanceClient(CoinProvider):
                     price_change_percentage_24h=float(ticker["priceChangePercent"])
                 )
             )
+
+            if len(coins) >= limit:
+                break
 
         return coins

@@ -1,16 +1,14 @@
-import httpx
+from app.clients.base_api_client import BaseAPIClient
 from app.config import COINGECKO_BASE_URL
 from app.models.coin import Coin
 from app.providers.coin_provider import CoinProvider
 
 class CoinGeckoClient(CoinProvider):
 
-    def __init__(self):
-        self.base_url = COINGECKO_BASE_URL
+    def __init__(self, http_client: BaseAPIClient):
+        self.http = BaseAPIClient(COINGECKO_BASE_URL)
 
     def get_top_coins(self, limit=100):
-
-        url = f"{self.base_url}/coins/markets"
 
         params = {
             "vs_currency": "inr",
@@ -20,25 +18,25 @@ class CoinGeckoClient(CoinProvider):
             "sparkline": False
         }
 
-        response = httpx.get(url, params=params, timeout=30)
-
-        response.raise_for_status()
-
-        data =  response.json()
+        data = self.http.get(
+            "/coins/markets",
+            params=params
+        )
 
         coins = []
 
-        for coin in data:
+        for item in data:
+
             coins.append(
                 Coin(
-                    coin_id=coin["id"],
-                    name=coin["name"],
-                    symbol=coin["symbol"],
-                    current_price=coin["current_price"],
-                    market_cap=coin["market_cap"],
-                    market_cap_rank=coin["market_cap_rank"],
-                    total_volume=coin["total_volume"],
-                    price_change_percentage_24h=coin["price_change_percentage_24h"]
+                    coin_id=item["id"],
+                    name=item["name"],
+                    symbol=item["symbol"],
+                    current_price=item["current_price"],
+                    market_cap=item["market_cap"],
+                    market_cap_rank=item["market_cap_rank"],
+                    total_volume=item["total_volume"],
+                    price_change_percentage_24h=item["price_change_percentage_24h"]
                 )
             )
 
